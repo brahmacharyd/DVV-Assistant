@@ -1,4 +1,3 @@
-// chat.service.ts
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 import { environment } from '../environments/environment';
@@ -8,17 +7,17 @@ export interface ChatMsg { role: Role; content: string; }
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
-  private history = new BehaviorSubject<ChatMsg[]>([
-    { role: 'system', content: 'You are DVV Assistant. Be concise and helpful.' }
-  ]);
+
+  private history = new BehaviorSubject<ChatMsg[]>([]); // start empty
   history$ = this.history.asObservable();
 
   private loading = new BehaviorSubject<boolean>(false);
   loading$ = this.loading.asObservable();
 
   private get apiUrl() {
-    // Use env override if provided, else default to /api
-    return (environment as any).apiBaseUrl ? `${environment.apiBaseUrl}/chat` : '/api/chat';
+    // default to /api when not overridden
+    const base = environment.apiBaseUrl || '/api';
+    return `${base}/chat`;
   }
 
   addUserMessage(text: string) {
@@ -28,7 +27,7 @@ export class ChatService {
   }
 
   clear() {
-    this.history.next([{ role: 'system', content: 'You are DVV Assistant. Be concise and helpful.' }]);
+    this.history.next([]); // no default system text
   }
 
   private buildMessagesForAPI() {
@@ -41,7 +40,7 @@ export class ChatService {
     try {
       const res = await fetch(this.apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }, // ✅ no Authorization here
+        headers: { 'Content-Type': 'application/json' }, // no Authorization here
         body: JSON.stringify({
           model: 'openai/gpt-4o',
           messages: this.buildMessagesForAPI()
@@ -66,7 +65,7 @@ export class ChatService {
     try {
       const res = await fetch(this.apiUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }, // ✅ no Authorization here
+        headers: { 'Content-Type': 'application/json' }, // no Authorization here
         body: JSON.stringify({
           model: 'openai/gpt-4o',
           messages: this.buildMessagesForAPI(),
@@ -98,7 +97,7 @@ export class ChatService {
             const delta = json?.choices?.[0]?.delta?.content ?? '';
             if (delta) this.appendToAssistant(startIdx, delta);
           } catch {
-            // ignore partial lines
+            // ignore partial/keep-alive lines
           }
         }
       }
