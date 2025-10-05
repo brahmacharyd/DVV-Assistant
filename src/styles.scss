@@ -1,0 +1,97 @@
+:root {
+    --ink: #0f172a;
+    --brand: #3b82f6;
+    --brand-600: #2563eb;
+}
+
+@keyframes pop-in {
+    from {
+        transform: translateY(6px) scale(.98);
+        opacity: 0;
+    }
+
+    to {
+        transform: translateY(0) scale(1);
+        opacity: 1;
+    }
+}
+
+.dvv-surface {
+    color: var(--ink);
+    background:
+        radial-gradient(1200px 600px at 120% -10%, #e0f2ff 0%, transparent 60%),
+        radial-gradient(900px 500px at -20% 10%, #f0e8ff 0%, transparent 60%),
+        linear-gradient(180deg, #f8fbff 0%, #f3f6ff 100%);
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(16, 24, 40, 0.08);
+}
+
+.dvv-glass {
+    background: color-mix(in srgb, #e6e6f0 72%, transparent);
+    -webkit-backdrop-filter: blur(12px) saturate(140%);
+    backdrop-filter: blur(12px) saturate(140%);
+    border-bottom: 1.5px solid rgba(59, 130, 246, .35);
+}
+
+.chat-scroll::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+}
+
+.chat-scroll::-webkit-scrollbar-thumb {
+    background: rgba(59, 130, 246, .25);
+    border-radius: 999px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .anim-none {
+        animation: none !important;
+        transition: none !important;
+    }
+}
+
+.theme-dark .dvv-surface {
+    color: #e6e9f2;
+    background:
+        radial-gradient(1100px 600px at 120% -10%, rgba(59, 130, 246, .12), transparent 60%),
+        radial-gradient(900px 500px at -20% 10%, rgba(167, 139, 250, .12), transparent 60%),
+        linear-gradient(180deg, #0b1220 0%, #0e1424 100%);
+    border-color: rgba(148, 163, 184, .25);
+}
+
+.theme-dark .dvv-glass {
+    background: color-mix(in srgb, #0f172a 55%, transparent);
+    border-color: rgba(59, 130, 246, .35);
+}
+
+.btn {
+    height: 42px;
+    padding: 0 16px;
+    border-radius: 14px;
+    font: inherit;
+    cursor: pointer;
+    border: 1.5px solid rgba(59, 130, 246, .45);
+    background: #fff;
+    color: var(--ink);
+}
+
+.btn:hover {
+    background: #f3f6ff;
+    box-shadow: 0 6px 16px rgba(16, 24, 40, .08);
+}
+
+.btn:active {
+    transform: translateY(1px);
+}
+
+.btn:disabled {
+    opacity: .6;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: linear-gradient(180deg, var(--brand) 0%, var(--brand-600) 100%);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 8px 20px rgba(37, 99, 235, .35);
+}

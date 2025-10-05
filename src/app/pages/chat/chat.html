@@ -1,5 +1,5 @@
-<div class="chat-root">
-  <header class="chat-header">
+<div class="chat-root dvv-surface">
+  <header class="chat-header dvv-glass">
     <div class="chat-header-left">
       <div class="chat-logo" aria-hidden="true"></div>
       <h1 class="chat-title">Dvv assistant</h1>
@@ -31,13 +31,13 @@
     Jump to latest ↓
   </button>
 
-  <form (ngSubmit)="send()" class="chat-composer">
+  <form (ngSubmit)="send()" class="chat-composer dvv-glass">
     <div class="composer-inner">
       <div class="composer-input-wrap">
         <textarea #composer [(ngModel)]="input" name="q" (input)="autosizeComposer()" (keydown)="onKeydown($event)"
           rows="1" placeholder="Type a message…" class="composer-input"></textarea>
 
-        <button type="submit" class="send-btn" [class.loading]="sending" [disabled]="(!input?.trim() && !sending)"
+        <button type="submit" class="send-btn" [class.loading]="sending" [disabled]="(!input.trim() && !sending)"
           [attr.aria-label]="sending ? 'Stop' : 'Send'" (click)="sending ? stop() : null">
           <svg *ngIf="!sending" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
             <path
