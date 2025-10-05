@@ -1,13 +1,14 @@
 import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
+import { environment } from '../environment';
 
 export type Role = 'system' | 'user' | 'assistant';
 export interface ChatMsg { role: Role; content: string; }
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
-  private readonly OPENROUTER_KEY = import.meta.env.OPENROUTER_API_KEY || ''
+  private readonly OPENROUTER_KEY = environment.openRouterKey|| ''
 
   
   private history = new BehaviorSubject<ChatMsg[]>([
