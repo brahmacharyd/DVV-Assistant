@@ -1,0 +1,47 @@
+<div class="chat-root">
+  <header class="chat-header">
+    <div class="chat-header-left">
+      <div class="chat-logo" aria-hidden="true"></div>
+      <h1 class="chat-title">Dvv assistant</h1>
+    </div>
+    <ng-container *ngIf="chat.history$ | async as history">
+      <div class="chat-count">{{ history.length }} messages</div>
+    </ng-container>
+  </header>
+
+  <main #scroller (scroll)="onScroll()" class="chat-scroll">
+    <ng-container *ngIf="chat.history$ | async as history">
+      <ng-container *ngFor="let m of history; index as i; trackBy: trackByIdx">
+        <div class="chat-row" [class.chat-row-right]="m.role === 'user'">
+          <div *ngIf="m.role === 'assistant'" class="chat-avatar">AI</div>
+
+          <div class="chat-bubble" [class.chat-bubble-user]="m.role === 'user'"
+            [class.chat-bubble-assistant]="m.role === 'assistant'" [class.chat-bubble-system]="m.role === 'system'">
+            <p class="chat-text">{{ m.content }}</p>
+          </div>
+
+          <div *ngIf="m.role === 'user'" class="chat-avatar user">You</div>
+        </div>
+      </ng-container>
+    </ng-container>
+
+    <div #endAnchor></div>
+  </main>
+
+  <button *ngIf="showJump" (click)="jumpToLatest()" class="jump-latest" type="button">
+    Jump to latest ↓
+  </button>
+
+  <form (ngSubmit)="send()" class="chat-composer">
+    <div class="composer-inner">
+      <textarea #composer [(ngModel)]="input" name="q" (input)="autosizeComposer()" (keydown)="onKeydown($event)"
+        rows="1" placeholder="Type a message…" class="composer-input"></textarea>
+
+      <div class="composer-actions">
+        <button type="submit" class="btn btn-primary" [disabled]="!input.trim()">Send</button>
+        <button type="button" class="btn btn-ghost" (click)="clear()">Clear</button>
+      </div>
+    </div>
+    <div class="safe-area"></div>
+  </form>
+</div>
