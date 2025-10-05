@@ -1,4 +1,4 @@
-
+import { HttpClient, HttpHeaders } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
 
@@ -7,6 +7,9 @@ export interface ChatMsg { role: Role; content: string; }
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
+  private readonly OPENROUTER_KEY = import.meta.env.OPENROUTER_API_KEY || ''
+
+  
   private history = new BehaviorSubject<ChatMsg[]>([
     { role: 'system', content: 'You are DVV Assistant. Be concise and helpful.' }
   ]);
@@ -29,15 +32,50 @@ export class ChatService {
     return this.history.value.map(m => ({ role: m.role, content: m.content }));
   }
 
+  async completeOnce(): Promise<void> {
+    this.loading.next(true);
+    try {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.OPENROUTER_KEY}`,
+          'X-Title': 'DVV Agent (Client Demo)'
+        },
+        body: JSON.stringify({
+          model: 'openai/gpt-4o',
+          messages: this.buildMessagesForAPI()
+        })
+      });
+      if (!res.ok) throw new Error(await res.text());
+      const data = await res.json();
+      const text = data?.choices?.[0]?.message?.content ?? '';
+      this.pushAssistantFull(text);
+    } catch (e) {
+      this.pushAssistantFull(`(error) ${(e as Error).message}`);
+    } finally {
+      this.loading.next(false);
+    }
+  }
+
   async ask(): Promise<void> {
     this.loading.next(true);
+
     const startIdx = this.pushAssistantFull('');
 
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: this.buildMessagesForAPI() })
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${this.OPENROUTER_KEY}`,
+          'X-Title': 'DVV Agent (Client Demo)'
+        },
+        body: JSON.stringify({
+          model: 'openai/gpt-4o',
+          messages: this.buildMessagesForAPI(),
+          stream: true
+        })
       });
 
       if (!res.ok || !res.body) {
@@ -50,17 +88,21 @@ export class ChatService {
       while (true) {
         const { done, value } = await reader.read();
         if (done) break;
+
         const chunk = decoder.decode(value, { stream: true });
         for (const line of chunk.split('\n')) {
-          const t = line.trim();
-          if (!t.startsWith('data:')) continue;
-          const payload = t.slice(5).trim();
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) continue;
+
+          const payload = trimmed.slice(5).trim();
           if (payload === '[DONE]') continue;
+
           try {
             const json = JSON.parse(payload);
-            const delta = json?.delta ?? '';   // ← our Edge function sends { delta }
+            const delta = json?.choices?.[0]?.delta?.content ?? '';
             if (delta) this.appendToAssistant(startIdx, delta);
-          } catch { /* ignore */ }
+          } catch {
+          }
         }
       }
     } catch (e) {
