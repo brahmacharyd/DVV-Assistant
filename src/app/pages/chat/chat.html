@@ -5,7 +5,6 @@
       <h1 class="chat-title">Dvv assistant</h1>
     </div>
     <ng-container *ngIf="chat.history$ | async as history">
-      <div class="chat-count">{{ history.length }} messages</div>
     </ng-container>
   </header>
 
@@ -34,12 +33,21 @@
 
   <form (ngSubmit)="send()" class="chat-composer">
     <div class="composer-inner">
-      <textarea #composer [(ngModel)]="input" name="q" (input)="autosizeComposer()" (keydown)="onKeydown($event)"
-        rows="1" placeholder="Type a message…" class="composer-input"></textarea>
+      <div class="composer-input-wrap">
+        <textarea #composer [(ngModel)]="input" name="q" (input)="autosizeComposer()" (keydown)="onKeydown($event)"
+          rows="1" placeholder="Type a message…" class="composer-input"></textarea>
 
-      <div class="composer-actions">
-        <button type="submit" class="btn btn-primary" [disabled]="!input.trim()">Send</button>
-        <button type="button" class="btn btn-ghost" (click)="clear()">Clear</button>
+        <button type="submit" class="send-btn" [class.loading]="sending" [disabled]="(!input?.trim() && !sending)"
+          [attr.aria-label]="sending ? 'Stop' : 'Send'" (click)="sending ? stop() : null">
+          <svg *ngIf="!sending" viewBox="0 0 24 24" width="18" height="18" aria-hidden="true">
+            <path
+              d="M7.05 12.95a.75.75 0 0 1-1.06-1.06l5.47-5.47a1.5 1.5 0 0 1 2.12 0l5.47 5.47a.75.75 0 1 1-1.06 1.06L13.5 7.96v9.54a.75.75 0 0 1-1.5 0V7.96l-4.95 4.99z" />
+          </svg>
+
+          <svg *ngIf="sending" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true">
+            <rect x="7" y="7" width="10" height="10" rx="2" ry="2"></rect>
+          </svg>
+        </button>
       </div>
     </div>
     <div class="safe-area"></div>
