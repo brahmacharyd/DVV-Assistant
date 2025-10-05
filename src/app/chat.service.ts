@@ -1,16 +1,13 @@
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+// chat.service.ts
 import { Injectable } from '@angular/core';
 import { BehaviorSubject } from 'rxjs';
-import { environment } from '../environment';
+import { environment } from '../environments/environment';
 
 export type Role = 'system' | 'user' | 'assistant';
 export interface ChatMsg { role: Role; content: string; }
 
 @Injectable({ providedIn: 'root' })
 export class ChatService {
-  private readonly OPENROUTER_KEY = environment.openRouterKey|| ''
-
-  
   private history = new BehaviorSubject<ChatMsg[]>([
     { role: 'system', content: 'You are DVV Assistant. Be concise and helpful.' }
   ]);
@@ -18,6 +15,11 @@ export class ChatService {
 
   private loading = new BehaviorSubject<boolean>(false);
   loading$ = this.loading.asObservable();
+
+  private get apiUrl() {
+    // Use env override if provided, else default to /api
+    return (environment as any).apiBaseUrl ? `${environment.apiBaseUrl}/chat` : '/api/chat';
+  }
 
   addUserMessage(text: string) {
     const next = [...this.history.value, { role: 'user' as Role, content: text }];
@@ -33,16 +35,13 @@ export class ChatService {
     return this.history.value.map(m => ({ role: m.role, content: m.content }));
   }
 
+  // ---------- Non-streaming ----------
   async completeOnce(): Promise<void> {
     this.loading.next(true);
     try {
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const res = await fetch(this.apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.OPENROUTER_KEY}`,
-          'X-Title': 'DVV Agent (Client Demo)'
-        },
+        headers: { 'Content-Type': 'application/json' }, // ✅ no Authorization here
         body: JSON.stringify({
           model: 'openai/gpt-4o',
           messages: this.buildMessagesForAPI()
@@ -59,19 +58,15 @@ export class ChatService {
     }
   }
 
+  // ---------- Streaming ----------
   async ask(): Promise<void> {
     this.loading.next(true);
-
     const startIdx = this.pushAssistantFull('');
 
     try {
-      const res = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+      const res = await fetch(this.apiUrl, {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${this.OPENROUTER_KEY}`,
-          'X-Title': 'DVV Agent (Client Demo)'
-        },
+        headers: { 'Content-Type': 'application/json' }, // ✅ no Authorization here
         body: JSON.stringify({
           model: 'openai/gpt-4o',
           messages: this.buildMessagesForAPI(),
@@ -103,6 +98,7 @@ export class ChatService {
             const delta = json?.choices?.[0]?.delta?.content ?? '';
             if (delta) this.appendToAssistant(startIdx, delta);
           } catch {
+            // ignore partial lines
           }
         }
       }
