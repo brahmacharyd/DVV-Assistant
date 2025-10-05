@@ -1,20 +1,26 @@
 export const config = { runtime: 'edge' };
 
+const CORS = {
+  'access-control-allow-origin': '*',
+  'access-control-allow-methods': 'POST, OPTIONS',
+  'access-control-allow-headers': 'content-type',
+};
+
 export default async function handler(req: Request) {
-  if (req.method !== 'POST') return new Response('POST only', { status: 405 });
+  if (req.method === 'OPTIONS') return new Response(null, { status: 204, headers: CORS });
+  if (req.method !== 'POST') return new Response('POST only', { status: 405, headers: CORS });
 
   const key = process.env['OPENROUTER_API_KEY'];
   if (!key) {
     return new Response(JSON.stringify({ error: 'Missing OPENROUTER_API_KEY' }), {
-      status: 401,
-      headers: { 'content-type': 'application/json' }
+      status: 401, headers: { 'content-type': 'application/json', ...CORS }
     });
   }
 
   const { messages } = await req.json().catch(() => ({ messages: [] }));
   if (!Array.isArray(messages)) {
     return new Response(JSON.stringify({ error: 'messages[] required' }), {
-      status: 400, headers: { 'content-type': 'application/json' }
+      status: 400, headers: { 'content-type': 'application/json', ...CORS }
     });
   }
 
@@ -30,16 +36,13 @@ export default async function handler(req: Request) {
 
   if (!upstream.ok || !upstream.body) {
     return new Response(await upstream.text(), {
-      status: upstream.status,
-      headers: { 'content-type': 'application/json' }
+      status: upstream.status, headers: { 'content-type': 'application/json', ...CORS }
     });
   }
 
-  // Pipe SSE downstream
   const { readable, writable } = new TransformStream();
   const writer = writable.getWriter();
-  const enc = new TextEncoder();
-  const dec = new TextDecoder();
+  const enc = new TextEncoder(); const dec = new TextDecoder();
 
   (async () => {
     try {
@@ -62,7 +65,7 @@ export default async function handler(req: Request) {
             const j = JSON.parse(payload);
             const delta = j?.choices?.[0]?.delta?.content ?? '';
             if (delta) await writer.write(enc.encode(`data: ${JSON.stringify({ delta })}\n\n`));
-          } catch { /* ignore partials */ }
+          } catch {}
         }
       }
       await writer.write(enc.encode(`data: ${JSON.stringify({ done: true })}\n\n`));
@@ -77,7 +80,8 @@ export default async function handler(req: Request) {
     headers: {
       'content-type': 'text/event-stream; charset=utf-8',
       'cache-control': 'no-cache, no-transform',
-      'connection': 'keep-alive'
+      'connection': 'keep-alive',
+      ...CORS
     }
   });
 }
